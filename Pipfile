@@ -8,6 +8,11 @@ verify_ssl = true
 [packages]
 requests-oauthlib = "*"
 tqdm = "*"
+requests = "*"
+flake8 = "*"
+google-api-python-client = "*"
+pandas = "*"
+oauth2client = "*"
 
 [requires]
 python_version = "3.8"
