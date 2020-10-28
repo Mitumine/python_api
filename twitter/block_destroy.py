@@ -1,6 +1,5 @@
 import Twitter_API
 import json
-import time
 from tqdm import tqdm
 from multiprocessing import Pool
 
