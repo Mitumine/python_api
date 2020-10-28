@@ -5,6 +5,7 @@ from pprint import pprint
 import re
 import datetime
 import csv
+import os
 
 
 def main(q, num):
@@ -24,7 +25,6 @@ def main(q, num):
     )
 
     DICT_CSV = {
-
     }
 
     data_list = []
@@ -35,7 +35,7 @@ def main(q, num):
         for output in outputs['items']:
             snip = output['snippet']
             video_id = output['id']['videoId']
-
+            ch_id = snip["channelId"]
             datas = {
                 'タイトル': snip['title'],
                 'URL': f'https://www.youtube.com/watch?v={video_id}',
@@ -43,28 +43,54 @@ def main(q, num):
                 'チャンネルURL': f'https://www.youtube.com/channel/{snip["channelId"]}',
                 '再生時間': get_duration(video_id),
                 '投稿日': snip['publishedAt'],
+                '再生回数': get_video_statistics(video_id, youtube)['viewCount'],
+                'チャンネル登録者数': get_ch_statistics(ch_id, youtube)['subscriberCount'],
             }
+
+            datas['再生回数/登録者数'] = get_percent(
+                int(datas['再生回数']),
+                int(datas['チャンネル登録者数'])
+            )
 
             data_list.append(datas)
 
         search_res = youtube.search().list_next(search_res, outputs)
 
-    dict_to_csv(data_list)
+    export_csv('test.csv', data_list)
 
 
-def dict_to_csv(dict_list: list):
-    HEADER = [
-        'タイトル',
-        'URL',
-        'チャンネル名',
-        'チャンネルURL',
-        '再生時間',
-        '投稿日',
-    ]
-    with open('datas.csv', 'w') as f:
-        writer = csv.DictWriter(f, HEADER)
-        writer.writeheader()
-        [writer.writerow(x) for x in dict_list]
+def get_percent(int_1, int_2):
+    if int_2 == 0:
+        return '100%'
+    return '{:.2%}'.format(int_1 / int_2)
+
+
+def get_ch_statistics(id, youtube):
+    statistics = youtube.channels().list(
+        part='snippet,statistics',
+        id=id,
+    ).execute()['items'][0]['statistics']
+    return statistics
+
+
+def get_video_statistics(id, youtube):
+    statistics = youtube.videos().list(
+        part='statistics',
+        id=id
+    ).execute()['items'][0]['statistics']
+    return statistics
+
+
+def export_csv(file_name, rows):
+    path = os.path.dirname(__file__)
+    path += f'/{file_name}'
+
+    keys = rows[0].keys()
+    with open(path, 'w')as f:
+        writer = csv.DictWriter(f, keys)
+        header_row = {x: x for x in keys}
+        writer.writerow(header_row)
+        [writer.writerow(row) for row in rows]
 
 
 def get_duration(id_):
@@ -116,4 +142,4 @@ def ConvertDuration(string):
 
 
 if __name__ == '__main__':
-    main('料理', 60)
+    main('料理', 5)
